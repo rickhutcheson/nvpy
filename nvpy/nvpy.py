@@ -58,7 +58,7 @@ except ImportError:
 else:
     HAVE_DOCUTILS = True
 
-VERSION = "0.9.4"
+VERSION = "0.9.5"
 
 class Config:
     """
@@ -74,36 +74,43 @@ class Config:
         # cross-platform way of getting home dir!
         # http://stackoverflow.com/a/4028943/532513
         home = os.path.abspath(os.path.expanduser('~'))
-        defaults = {'app_dir' : app_dir,
-                    'appdir' : app_dir,
-                    'home' : home,
-                    'notes_as_txt' : '0',
-                    'housekeeping_interval' : '2',
-                    'search_mode' : 'gstyle',
-                    'case_sensitive' : '1',
-                    'search_tags' : '1',
-                    'sort_mode' : '1',
-                    'pinned_ontop' : '1',
-                    'db_path' : os.path.join(home, '.nvpy'),
-                    'txt_path' : os.path.join(home, '.nvpy/notes'),
-                    'font_family' : 'Courier', # monospaced on all platforms
-                    'font_size' : '10',
-                    'list_font_family' : 'Helvetica', # sans on all platforms
-                    'list_font_family_fixed' : 'Courier', # monospace on all platforms
-                    'list_font_size' : '10',
-                    'layout' : 'horizontal',
-                    'print_columns' : '0',
-                    'background_color' : 'white',
-                    'sn_username' : '',
-                    'sn_password' : '',
-                    'simplenote_sync' : '1',
-                    # Filename or filepath to a css file used style the rendered
-                    # output; e.g. nvpy.css or /path/to/my.css
-                    'rest_css_path': None,
-                    'note_extensions': '.txt, .mkdn',
-                   }
+        # specification for config options: types, default values,
+        # and any necessary arguments passed to cp.getX
+        spec = {'app_dir' : (app_dir, '', {'raw': True}),
+                'appdir' : (app_dir, '', {'raw': True}),
+                'home' : (home, ''),
+                'notes_as_txt' : ('0', 'int'),
+                'housekeeping_interval_ms' : ('2', 'int'),
+                'search_mode' : ('gstyle', ''),
+                'case_sensitive' : ('1', 'int'),
+                'search_tags' : ('1', 'int'),
+                'sort_mode' : ('1', 'int'),
+                'pinned_ontop' : ('1', 'int'),
+                'db_path' : (os.path.join(home, '.nvpy'), ''),
+                'txt_path' : (os.path.join(home, '.nvpy/notes'), ''),
+                'font_family' : ('Courier', ''), # monospaced on all platforms
+                'font_size' : ('10', 'int'),
+                'list_font_family' : ('Helvetica', ''), # sans on all platforms
+                'list_font_family_fixed' : ('Courier', ''),# monospace on all platforms
+                'list_font_size' : ('10', 'int'),
+                'layout' : ('horizontal', ''),
+                'print_columns' : ('0', 'int'),
+                'background_color' : ('white', ''),
+                'sn_username' : ('', ''),
+                'sn_password' : ('', ''),
+                'simplenote_sync' : ('1', 'int'),
+                # Filename or filepath to a css file used style the rendered
+                # output; e.g. nvpy.css or /path/to/my.css
+                'rest_css_path': (None, ''),
+                'note_extensions': (".txt, .mkdn", ''),
+        }
 
+
+        defaults = {k: v[0] for (k, v) in spec.iteritems()}
+        types = {k: v[1] for (k, v) in spec.iteritems()}
+        args = {k: v[2] if len(v) > 2 else None for (k, v) in spec.iteritems()}
         cp = ConfigParser.SafeConfigParser(defaults)
+
         # later config files overwrite earlier files
         # try a number of alternatives
         self.files_read = cp.read([os.path.join(app_dir, 'nvpy.cfg'),
@@ -124,38 +131,11 @@ class Config:
         # for the username and password, we don't want interpolation,
         # hence the raw parameter. Fixes
         # https://github.com/cpbotha/nvpy/issues/9
-        self.sn_username = cp.get(cfg_sec, 'sn_username', raw=True)
-        self.sn_password = cp.get(cfg_sec, 'sn_password', raw=True)
-        self.simplenote_sync = cp.getint(cfg_sec, 'simplenote_sync')
-        # make logic to find in $HOME if not set
-        self.db_path = cp.get(cfg_sec, 'db_path')
-        #  0 = alpha sort, 1 = last modified first
-        self.notes_as_txt = cp.getint(cfg_sec, 'notes_as_txt')
-        self.txt_path = os.path.join(home, cp.get(cfg_sec, 'txt_path'))
-        self.search_mode = cp.get(cfg_sec, 'search_mode')
-        self.case_sensitive = cp.getint(cfg_sec, 'case_sensitive')
-        self.search_tags = cp.getint(cfg_sec, 'search_tags')
-        self.sort_mode = cp.getint(cfg_sec, 'sort_mode')
-        self.pinned_ontop = cp.getint(cfg_sec, 'pinned_ontop')
-        self.housekeeping_interval = cp.getint(cfg_sec, 'housekeeping_interval')
-        self.housekeeping_interval_ms = self.housekeeping_interval * 1000
-
-        self.font_family = cp.get(cfg_sec, 'font_family')
-        self.font_size = cp.getint(cfg_sec, 'font_size')
-
-        self.list_font_family = cp.get(cfg_sec, 'list_font_family')
-        self.list_font_family_fixed = cp.get(cfg_sec, 'list_font_family_fixed')
-        self.list_font_size = cp.getint(cfg_sec, 'list_font_size')
-
-        self.layout = cp.get(cfg_sec, 'layout')
-        self.print_columns = cp.getint(cfg_sec, 'print_columns')
-
-        self.background_color = cp.get(cfg_sec, 'background_color')
-
-        self.rest_css_path = cp.get(cfg_sec, 'rest_css_path')
-        self.note_extensions = cp.get(cfg_sec, 'note_extensions')
-
-
+        for k in spec.keys():
+            if args[k]:
+                setattr(self, k, getattr(cp, 'get'+types[k])(cfg_sec, k, args[k]))
+            else:
+                setattr(self, k, getattr(cp, 'get'+types[k])(cfg_sec, k))
 class NotesListModel(SubjectMixin):
     """
     @ivar list: List of (str key, dict note) objects.
