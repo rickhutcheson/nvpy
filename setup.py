@@ -1,6 +1,6 @@
 import os
 from setuptools import setup
-from nvpy import nvpy
+from nvpy.version import VERSION
 
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
@@ -12,6 +12,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
+<<<<<<< HEAD
     name="nvpy",
     version=nvpy.VERSION,
     author="Charl P. Botha",
@@ -25,6 +26,21 @@ setup(
     install_requires=['Markdown', 'docutils'],
     entry_points={
         'gui_scripts': ['nvpy = nvpy.nvpy:main']
+=======
+    name = "nvpy",
+    version = VERSION,
+    author = "Charl P. Botha",
+    author_email = "cpbotha@vxlabs.com",
+    description = "A cross-platform simplenote-syncing note-taking app inspired by Notational Velocity.",
+    license = "BSD",
+    keywords = "simplenote note-taking tkinter nvalt markdown",
+    url = "https://github.com/cpbotha/nvpy",
+    packages=['nvpy'],
+    long_description=read('README.rst'),
+    install_requires = ['Markdown', 'docutils', 'TinkerPy'],
+    entry_points = {
+        'gui_scripts' : ['nvpy = nvpy.nvpy:main']
+>>>>>>> c12dda7bfb2316ebfeb4e6b5997acee822276b54
     },
     # use MANIFEST.in file
     # because package_data is ignored during sdist
